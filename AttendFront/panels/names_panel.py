@@ -58,7 +58,7 @@ def _name_tile(name: str, index: int) -> ft.Container:
 
 def build_names_panel(names: list[str] | None = None) -> ft.Container:
     """Build the student names panel."""
-    names = names or _DEFAULT_NAMES
+    current_names = list(names or _DEFAULT_NAMES)
 
     header = ft.Text(
         "قائمة الحضور",
@@ -69,18 +69,48 @@ def build_names_panel(names: list[str] | None = None) -> ft.Container:
         rtl=True,
     )
 
-    name_tiles = [_name_tile(n, i) for i, n in enumerate(names)]
-
     list_view = ft.ListView(
-        controls=name_tiles,
+        controls=[_name_tile(n, i) for i, n in enumerate(current_names)],
         expand=True,
         spacing=6,
         padding=ft.padding.only(top=10),
     )
 
+    def add_student(e):
+        if name_input.value and name_input.value.strip():
+            current_names.insert(0, name_input.value.strip())
+            list_view.controls = [_name_tile(n, i) for i, n in enumerate(current_names)]
+            list_view.update()
+            name_input.value = ""
+            name_input.update()
+
+    name_input = ft.TextField(
+        hint_text="اسم الطالب...", 
+        expand=True, 
+        rtl=True, 
+        text_align=ft.TextAlign.RIGHT,
+        dense=True,
+        content_padding=10,
+        border_color="#444444",
+        focused_border_color="#4CAF50",
+    )
+
+    add_btn = ft.IconButton(
+        icon=ft.Icons.ADD,
+        icon_color="#FFFFFF",
+        bgcolor="#4CAF50",
+        on_click=add_student,
+    )
+
+    input_row = ft.Row(
+        controls=[add_btn, name_input],
+        spacing=10,
+        vertical_alignment=ft.CrossAxisAlignment.CENTER,
+    )
+
     return ft.Container(
         content=ft.Column(
-            controls=[header, list_view],
+            controls=[header, list_view, input_row],
             spacing=12,
             expand=True,
         ),
