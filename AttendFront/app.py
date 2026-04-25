@@ -194,7 +194,9 @@ class AttendApp:
 
     def _on_face_detected(self):
         """Callback from face detector thread."""
-        self.page.run_task(show_welcome, self.overlay, 0.1)
+        frame = self.camera.get_frame()
+        if frame is not None:
+            self.page.run_task(self._animate_snapshot, frame)
 
     def _on_close(self, e):
         self.face_detector.stop()
