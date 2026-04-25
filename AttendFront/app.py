@@ -138,10 +138,8 @@ class AttendApp:
     # Callbacks
     # ------------------------------------------------------------------
     def _on_take(self, e):
-        """Handle Take button press – animate snapshot then show welcome."""
-        frame = self.camera.get_frame()
-        if frame:
-            self.page.run_task(self._animate_snapshot, frame)
+        """Handle Take button press – extract all faces from the current frame."""
+        self.face_detector.force_extract_faces()
 
     async def _animate_snapshot(self, frame_b64: str):
         """Animate: pop-in at center → bounce → fly to pending panel."""
@@ -192,11 +190,12 @@ class AttendApp:
         # Flash welcome overlay
         #await show_welcome(self.overlay)
 
-    def _on_face_detected(self):
-        """Callback from face detector thread."""
-        frame = self.camera.get_frame()
-        if frame is not None:
-            self.page.run_task(self._animate_snapshot, frame)
+    async def _add_snapshot_async(self, face_b64: str):
+        self._pending.add_snapshot(face_b64)
+
+    def _on_face_detected(self, face_b64: str):
+        """Callback from face detector thread with the face crop."""
+        self.page.run_task(self._add_snapshot_async, face_b64)
 
     def _on_close(self, e):
         self.face_detector.stop()
