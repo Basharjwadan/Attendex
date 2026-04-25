@@ -16,6 +16,7 @@ from panels.camera_panel import build_camera_panel, camera_update_loop
 from panels.names_panel import build_names_panel
 from panels.pending_panel import PendingPanel
 from overlay import build_overlay, show_welcome
+from face_detector import FaceDetector
 
 
 class AttendApp:
@@ -42,6 +43,12 @@ class AttendApp:
 
         # --- Layers ---
         self._build_layers()
+
+        # --- Face Detection ---
+        self.face_detector = FaceDetector(
+            camera=self.camera,
+            on_face_detected_callback=self._on_face_detected
+        )
 
     # ------------------------------------------------------------------
     # Page setup
@@ -185,7 +192,12 @@ class AttendApp:
         # Flash welcome overlay
         #await show_welcome(self.overlay)
 
+    def _on_face_detected(self):
+        """Callback from face detector thread."""
+        self.page.run_task(show_welcome, self.overlay, 0.1)
+
     def _on_close(self, e):
+        self.face_detector.stop()
         self.camera.stop()
 
     # ------------------------------------------------------------------

@@ -44,14 +44,14 @@ def build_overlay() -> ft.Container:
     return overlay
 
 
-async def show_welcome(overlay: ft.Container):
-    """Show the overlay for 1 second, then hide it."""
+async def show_welcome(overlay: ft.Container, duration: float = 1.0):
+    """Show the overlay for the specified duration, then hide it."""
     overlay.visible = True
     try:
         overlay.update()
     except Exception:
         return
-    await asyncio.sleep(1)
+    await asyncio.sleep(duration)
     overlay.visible = False
     try:
         overlay.update()
