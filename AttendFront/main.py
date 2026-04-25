@@ -1,5 +1,5 @@
 """
-main.py – Entry point for AttendFlet camera application.
+main.py – Entry point for AttendFlet.
 """
 
 import flet as ft
@@ -10,10 +10,10 @@ async def main(page: ft.Page):
     page.title = "AttendFlet – نظام الحضور"
     page.padding = 0
     page.spacing = 0
+    page.bgcolor = "#1E1E1E"
 
     root_view = build_root_view(page)
-    page.controls.append(root_view)
-    page.update()
+    page.add(root_view)
 
 
 ft.run(main)

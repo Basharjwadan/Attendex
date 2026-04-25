@@ -1,16 +1,24 @@
 import flet as ft
-from app import AttendApp
+from views.detection_view import DetectionView
+from views.enrollment_view import EnrollmentView
+
 
 def build_root_view(page: ft.Page):
     """Build the startup dashboard view."""
 
     async def start_detection(e):
         page.controls.clear()
+        detection_view = DetectionView(page)
+        page.controls.append(detection_view.build())
         page.update()
-        
-        # Initialize the main app and start it
-        app = AttendApp(page)
-        await app.run()
+        await detection_view.run()
+
+    async def start_enrollment(e):
+        page.controls.clear()
+        enrollment_view = EnrollmentView(page)
+        page.controls.append(enrollment_view.build())
+        page.update()
+        await enrollment_view.run()
 
     icon = ft.Icon(
         ft.Icons.CAMERA_ALT_ROUNDED,
@@ -53,6 +61,28 @@ def build_root_view(page: ft.Page):
         width=340,
     )
 
+    enroll_btn = ft.Container(
+        content=ft.Row(
+            controls=[
+                ft.Icon(ft.Icons.PERSON_ADD_ROUNDED, color="#FFFFFF", size=24),
+                ft.Text(
+                    "تسجيل طالب  ✦  Register Student",
+                    color="#FFFFFF",
+                    size=18,
+                    weight=ft.FontWeight.W_600,
+                ),
+            ],
+            alignment=ft.MainAxisAlignment.CENTER,
+            spacing=10,
+        ),
+        bgcolor="#5C35A0",
+        border_radius=12,
+        padding=ft.Padding(32, 16, 32, 16),
+        on_click=start_enrollment,
+        ink=True,
+        width=340,
+    )
+
     return ft.Container(
         content=ft.Column(
             controls=[
@@ -62,6 +92,8 @@ def build_root_view(page: ft.Page):
                 subtitle,
                 ft.Container(height=40),
                 start_btn,
+                ft.Container(height=12),
+                enroll_btn,
             ],
             alignment=ft.MainAxisAlignment.CENTER,
             horizontal_alignment=ft.CrossAxisAlignment.CENTER,

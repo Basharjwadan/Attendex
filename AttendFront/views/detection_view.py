@@ -1,5 +1,5 @@
 """
-app.py – AttendApp: the main application controller.
+detection_view.py – DetectionView: the main camera/attendance view.
 
 Builds a 4-layer ft.Stack:
   1. Background  – solid gray
@@ -15,16 +15,22 @@ from camera import Camera
 from panels.camera_panel import build_camera_panel, camera_update_loop
 from panels.names_panel import build_names_panel
 from panels.pending_panel import PendingPanel
-from overlay import build_overlay, show_welcome
+from overlay import build_overlay
 from face_detector import FaceDetector
 
 
-class AttendApp:
-    """Top-level application controller."""
+class DetectionView:
+    """Detection view – plain class that builds a full-screen ft.Stack."""
 
     def __init__(self, page: ft.Page):
         self.page = page
-        self._setup_page()
+
+        # Page-level settings
+        self.page.title = "AttendFlet – نظام الحضور"
+        self.page.padding = 0
+        self.page.spacing = 0
+        self.page.bgcolor = "#616161"
+        self.page.on_close = self._on_close
 
         # --- Camera ---
         self.camera = Camera(device=0, flip_horizontal=True)
@@ -41,9 +47,6 @@ class AttendApp:
         # --- Snapshot animation ---
         self._build_snapshot_anim()
 
-        # --- Layers ---
-        self._build_layers()
-
         # --- Face Detection ---
         self.face_detector = FaceDetector(
             camera=self.camera,
@@ -51,22 +54,12 @@ class AttendApp:
         )
 
     # ------------------------------------------------------------------
-    # Page setup
-    # ------------------------------------------------------------------
-    def _setup_page(self):
-        self.page.title = "AttendFlet – نظام الحضور"
-        self.page.padding = 0
-        self.page.spacing = 0
-        self.page.bgcolor = "#616161"
-        self.page.on_close = self._on_close
-
-    # ------------------------------------------------------------------
     # Snapshot animation container
     # ------------------------------------------------------------------
     def _build_snapshot_anim(self):
         """Create the animated snapshot container for the fly-to-pending effect."""
         self._snap_image = ft.Image(
-            src=None,
+            src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7",  # 1x1 transparent
             fit=ft.BoxFit.COVER,
             gapless_playback=True,
         )
@@ -87,8 +80,7 @@ class AttendApp:
             visible=False,
         )
 
-        # Full-screen wrapper positions the snapshot in the camera area center
-        # MUST be visible=False initially so it doesn't block clicks on layers below
+        # Full-screen wrapper – invisible initially so clicks pass through
         self._snap_layer = ft.Container(
             content=self._snap_container,
             alignment=ft.Alignment(-0.25, -0.2),
@@ -97,10 +89,33 @@ class AttendApp:
         )
 
     # ------------------------------------------------------------------
-    # Build the layered stack
+    # Build the layered stack and return it
     # ------------------------------------------------------------------
-    def _build_layers(self):
+    def build(self) -> ft.Control:
+        """Build and return the top-level ft.Stack control."""
         background = ft.Container(bgcolor="#616161", expand=True)
+
+        # Toolbar with home button
+        home_btn = ft.Container(
+            content=ft.Row(
+                controls=[
+                    ft.Icon(ft.Icons.HOME_ROUNDED, color="#FFFFFF", size=18),
+                    ft.Text("Home", color="#FFFFFF", size=13, weight=ft.FontWeight.W_500),
+                ],
+                spacing=6,
+                tight=True,
+            ),
+            bgcolor="#424242",
+            border_radius=20,
+            padding=ft.Padding(14, 7, 14, 7),
+            on_click=self._go_home,
+            ink=True,
+        )
+
+        toolbar = ft.Container(
+            content=ft.Row(controls=[home_btn], spacing=0),
+            padding=ft.Padding(0, 0, 0, 4),
+        )
 
         # Top section: camera + names side by side
         top_row = ft.Row(
@@ -112,10 +127,11 @@ class AttendApp:
             spacing=8,
         )
 
-        # App layout: top row + pending panel at bottom
+        # App layout: toolbar + top row + pending panel at bottom
         app_layer = ft.Container(
             content=ft.Column(
                 controls=[
+                    toolbar,
                     ft.Container(content=top_row, expand=4),
                     ft.Container(content=self.pending_panel, expand=1),
                 ],
@@ -126,13 +142,20 @@ class AttendApp:
             padding=8,
         )
 
-        # Order: background → app → overlay → snapshot (on top)
-        stack = ft.Stack(
+        return ft.Stack(
             controls=[background, app_layer, self.overlay, self._snap_layer],
             expand=True,
         )
 
-        self.page.add(stack)
+    def _go_home(self, e):
+        """Stop everything and return to the root dashboard."""
+        self.face_detector.stop()
+        self.camera.stop()
+        from views.root_view import build_root_view
+        self.page.bgcolor = "#1E1E1E"
+        self.page.controls.clear()
+        self.page.controls.append(build_root_view(self.page))
+        self.page.update()
 
     # ------------------------------------------------------------------
     # Callbacks
@@ -186,9 +209,6 @@ class AttendApp:
 
         # Add snapshot to pending panel
         self._pending.add_snapshot(frame_b64)
-
-        # Flash welcome overlay
-        #await show_welcome(self.overlay)
 
     async def _add_snapshot_async(self, face_b64: str):
         self._pending.add_snapshot(face_b64)
